@@ -1,0 +1,11 @@
+{
+  "devDependencies": {
+    "concurrently": "^9.0.1",
+    "nodemon": "^3.1.7"
+  },
+  "scripts": {
+    "start": "concurrently \"npm run server\" \"npm run client\" --names \"SERVER,CLIENT\" -c \"bgBlue.bold,bgMagenta.bold\"",
+    "server": "cd server && nodemon index.js",
+    "client": "cd client && npm start"
+  }
+}
