@@ -71,6 +71,22 @@ io.on('connection', (socket) => {
 		callback({room: room.toClient()});
 	});
 
+	socket.on('playing', () => {
+		if (!player.room)
+			return;
+		const room = ROOMS[player.room];
+		player.isPlaying = true;
+		io.to(player.room).emit('updateRoom', room.toClient());
+	});
+
+	socket.on('notPlaying', () => {
+		if (!player.room)
+			return;
+		const room = ROOMS[player.room];
+		player.isPlaying = false;
+		io.to(player.room).emit('updateRoom', room.toClient());
+	});
+
 	socket.on('buzz', () => {
 		if (!player.room)
 			return;

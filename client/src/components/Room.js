@@ -25,6 +25,11 @@ export default function Room({ room, setRoom }) {
 			<h1>Room: {room.id}</h1>
 			{JSON.stringify(room)}
 			<HostControls player={room.players.find(player => socket.clientId === player.id)} room={room} />
+			{
+				room.players.find(player => player.id === socket.clientId).isPlaying ?
+				<button onClick={() => socket.emit('notPlaying')}>Spectate</button> :
+				<button onClick={() => socket.emit('playing')}>Join room</button>
+			}
 			<div className='buzzer-container' onClick={buzz}>
 				{room.message && <div className='room-message'>{room.message}</div>}
 				{room.currentBuzz === socket.clientId ? <img src={BuzzerPressed} alt='buzzer' /> : <img src={Buzzer} alt='buzzer' />}
@@ -72,14 +77,20 @@ function HostControls({ player, room }) {
 }
 
 function PlayerCard({ player, room }) {
+	let className = '';
+	if (!player.isPlaying)
+		className = 'spectator';
+	else if (room.currentBuzz === player.id)
+		className = 'current-buzz';
+	else if (room.roundPaused)
+		className = 'round-paused';
+	else if (room.pressedThisRound.includes(player.id))
+		className = 'pressed-this-round';
+	if (room.host === player.id)
+		className += ' host';
+
 	return (
-		<div 
-			className={'player-card'
-				+ (room.currentBuzz === player.id ? ' current-buzz' : '')
-				+ (room.roundPaused ? ' round-paused' : '')
-				+ (room.pressedThisRound.includes(player.id) ? ' pressed-this-round' : '')
-			}
-		>
+		<div className={'player-card ' + className}>
 			<div className='player-buzzer'
 				onClick={() => {
 					socket.emit('pressBuzzer', room.id);

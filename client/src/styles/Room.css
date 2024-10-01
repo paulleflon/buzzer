@@ -12,14 +12,22 @@
 	justify-content: center;
 	align-items: center;
 	padding: 10px;
-	transition: .3s ease;
+	transition: .3s ease, font-style 0s;
 	&.round-paused, &.pressed-this-round {
 		filter: grayscale(100%);
 	}
-	&.current-buzz {
+	&.current-buzz, &.host.current-buzz {
 		filter: grayscale(0%);
 		background-color: #90ee9080;
 		border-color: #90ee90cc;
+	}
+	&.spectator {
+		font-style: italic;
+		opacity: .5;
+	}
+	&.host {
+		background-color: #ffce2dca;
+		border-color: #ffce2dca;
 	}
 }
 
