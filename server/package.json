@@ -1,0 +1,9 @@
+{
+  "name": "buzzer",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "socket.io": "^4.8.0"
+  }
+}
