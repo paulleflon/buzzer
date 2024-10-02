@@ -6,6 +6,7 @@ import BuzzerPressed from '../assets/buzzer_pressed.png';
 import BuzzerAudio from '../assets/buzzer.mp3';
 
 export default function Room({ room, setRoom }) {
+	const player = room.players.find(player => player.id === socket.clientId);
 	const [audio] = useState(new Audio(BuzzerAudio));
 
 	useEffect(() => {
@@ -21,23 +22,33 @@ export default function Room({ room, setRoom }) {
 		socket.emit('buzz');
 	}
 	return (
-		<div>
+		<>
 			<h1>Room: {room.id}</h1>
 			{JSON.stringify(room)}
 			<HostControls player={room.players.find(player => socket.clientId === player.id)} room={room} />
+			<div>
 			{
 				room.players.find(player => player.id === socket.clientId).isPlaying ?
 				<button onClick={() => socket.emit('notPlaying')}>Spectate</button> :
 				<button onClick={() => socket.emit('playing')}>Join room</button>
 			}
-			<div className='buzzer-container' onClick={buzz}>
-				{room.message && <div className='room-message'>{room.message}</div>}
-				{room.currentBuzz === socket.clientId ? <img src={BuzzerPressed} alt='buzzer' /> : <img src={Buzzer} alt='buzzer' />}
 			</div>
-			<div>
+			<div className='game-container'>
+				{player.isPlaying ? 
+					<div className='buzzer-container' onClick={buzz}>
+						{room.currentBuzz === socket.clientId ? <img src={BuzzerPressed} alt='buzzer' /> : <img src={Buzzer} alt='buzzer' />}
+					</div>
+				:
+				<div className='spectating'>
+					You are spectating
+				</div>
+				}
+				{room.message && <div className='room-message'>{room.message}</div>}
+			</div>
+			<div className='bottom-row'>
 				{room.players.map(player => <PlayerCard key={player.id} player={player} room={room} />)}
 			</div>
-		</div>
+		</>
 	)
 };
 
