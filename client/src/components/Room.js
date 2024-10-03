@@ -23,14 +23,16 @@ export default function Room({ room, setRoom }) {
 	}
 	return (
 		<>
-			<h1>Room: {room.id}</h1>
-			{JSON.stringify(room)}
+		<div className='top-bar'>
+			<div className='room-code'>
+				<div className='room-code-cta'>Hover to reveal code</div>
+				<div className='room-code-hidden'>{room.id}</div>
+			</div>
 			<HostControls player={room.players.find(player => socket.clientId === player.id)} room={room} />
-			<div>
 			{
 				room.players.find(player => player.id === socket.clientId).isPlaying ?
 				<button onClick={() => socket.emit('notPlaying')}>Spectate</button> :
-				<button onClick={() => socket.emit('playing')}>Join room</button>
+				<button onClick={() => socket.emit('playing')}>Join game</button>
 			}
 			</div>
 			<div className='game-container'>

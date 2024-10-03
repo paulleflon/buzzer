@@ -4,6 +4,47 @@
 	height: 100%;
 }
 
+.top-bar {
+	height: 120px;
+	display: flex;
+	justify-content: space-around;
+	align-items: center;
+	flex-grow: 0;
+}
+
+.room-code {
+	position: relative;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	font: 800 20pt 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+	width: max-content;
+	border: 3px solid #c8c8c8cb;
+	padding: 12px 30px;
+	background-color: #e4e4e46f;
+	border-radius: 15px;
+	& .room-code-cta {
+		position: absolute;
+		font: 600 10pt 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+		transition: opacity .3s ease .3s, transform .3s ease .3s;
+	}
+
+	& .room-code-hidden {
+		filter: blur(10px);
+		transition: filter .3s ease .3s;
+	}
+
+	&:hover {
+		& .room-code-cta {
+			opacity: 0;
+			transform: scale(0.5);
+		}
+		& .room-code-hidden {
+			filter: blur(0);
+		}
+	}
+}
+
 .player-card {
 	box-sizing: border-box;
 	position: relative;
@@ -86,7 +127,6 @@
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	margin-top: 20px;
 	gap: 10px;
 }
 
