@@ -24,9 +24,21 @@ export default function Room({ room, setRoom }) {
 		return () => socket.off('updateRoom');
 	});
 
+	useEffect(() => {
+		const handleKeyDown = (e) => {
+			if (e.key === ' ') {
+				buzz();
+			}
+		}
+		document.addEventListener('keydown', handleKeyDown);
+		return () => document.removeEventListener('keydown', handleKeyDown);
+	});
+
 	const buzz = () => {
-		socket.emit('buzz');
+		if (player.isPlaying && !room.currentBuzz)
+			socket.emit('buzz');
 	}
+
 	return (
 		<>
 		<div className='top-bar'>

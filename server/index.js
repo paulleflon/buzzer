@@ -95,6 +95,8 @@ io.on('connection', (socket) => {
 			return;
 		if (room.pressedThisRound.includes(player.id))
 			return;
+		if (!player.isPlaying)
+			return;
 		room.roundPaused = true;
 		room.pressedThisRound.push(player.id);
 		room.currentBuzz = player.id;
