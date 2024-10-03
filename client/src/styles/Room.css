@@ -84,6 +84,7 @@
 	display: flex;
 	justify-content: center;
 	align-items: center;
+	outline: none;
 }
 
 .spectating {
@@ -141,7 +142,7 @@
 }
 
 .pause-button {
-	width: 100px;
+	width: 110px;
 }
 
 .play-button {

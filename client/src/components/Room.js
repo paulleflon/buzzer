@@ -1,4 +1,4 @@
-import {useEffect, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import { socket } from '../lib/socket';
 import '../styles/Room.css';
 import Buzzer from '../assets/buzzer.png';
@@ -9,6 +9,7 @@ export default function Room({ room, setRoom }) {
 	const player = room.players.find(player => player.id === socket.clientId);
 	const [lastMessage, setLastMessage] = useState('');
 	const [audio] = useState(new Audio(BuzzerAudio));
+	const container = useRef(null);
 
 	useEffect(() => {
 		socket.on('updateRoom', (updatedRoom) => {
@@ -16,6 +17,7 @@ export default function Room({ room, setRoom }) {
 			if (updatedRoom.message && updatedRoom.message !== lastMessage) {
 				setLastMessage(updatedRoom.message);
 			}
+			container.current.focus();
 		});
 		socket.on('buzz', () => {
 			audio.currentTime = 0;
@@ -24,20 +26,15 @@ export default function Room({ room, setRoom }) {
 		return () => socket.off('updateRoom');
 	});
 
-	useEffect(() => {
-		const handleKeyDown = (e) => {
-			if (e.key === ' ') {
-				buzz();
-			}
-		}
-		document.addEventListener('keydown', handleKeyDown);
-		return () => document.removeEventListener('keydown', handleKeyDown);
-	});
-
 	const buzz = () => {
 		if (player.isPlaying && !room.currentBuzz)
 			socket.emit('buzz');
 	}
+
+	const keyDown = (e) => {
+		if (e.key === ' ')
+			buzz();
+	};
 
 	return (
 		<>
@@ -53,7 +50,12 @@ export default function Room({ room, setRoom }) {
 				<button className='play-button' onClick={() => socket.emit('playing')}>Join game</button>
 			}
 			</div>
-			<div className='game-container'>
+			<div 
+				className='game-container' 
+				ref={container}
+				tabIndex={0}
+				onKeyDown={keyDown}
+			>
 				{player.isPlaying ? 
 					<div className='buzzer-container' onClick={buzz}>
 						{room.currentBuzz === socket.clientId ? <img src={BuzzerPressed} alt='buzzer' /> : <img src={Buzzer} alt='buzzer' />}
