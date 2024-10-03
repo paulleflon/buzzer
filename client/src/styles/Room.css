@@ -94,7 +94,7 @@
 	position: absolute;
 	top: 50%;
 	left: 50%;
-	transform: translate(-50%, -50%);
+	transform: translate(-50%, -50%) scale(0);
 	background-color: #7e7e7eae;
 	color: white;
 	padding: 10px;
@@ -102,6 +102,16 @@
 	font: bold 20pt 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
 	border: 3px solid #c8c8c8cb;
 	backdrop-filter: blur(10px);
+	pointer-events: none;
+	opacity: 0;
+	filter: blur(10px);
+	transition: .3s ease;
+	&.visible {
+		transform: translate(-50%, -50%) scale(1);
+		opacity: 1;
+		filter: blur(0);
+	}
+
 
 }
 
@@ -128,6 +138,14 @@
 	justify-content: center;
 	align-items: center;
 	gap: 10px;
+}
+
+.pause-button {
+	width: 100px;
+}
+
+.play-button {
+	width: 150px;
 }
 
 

@@ -7,10 +7,16 @@ import BuzzerAudio from '../assets/buzzer.mp3';
 
 export default function Room({ room, setRoom }) {
 	const player = room.players.find(player => player.id === socket.clientId);
+	const [lastMessage, setLastMessage] = useState('');
 	const [audio] = useState(new Audio(BuzzerAudio));
 
 	useEffect(() => {
-		socket.on('updateRoom', setRoom);
+		socket.on('updateRoom', (updatedRoom) => {
+			setRoom(updatedRoom);
+			if (updatedRoom.message && updatedRoom.message !== lastMessage) {
+				setLastMessage(updatedRoom.message);
+			}
+		});
 		socket.on('buzz', () => {
 			audio.currentTime = 0;
 			audio.play();
@@ -31,8 +37,8 @@ export default function Room({ room, setRoom }) {
 			<HostControls player={room.players.find(player => socket.clientId === player.id)} room={room} />
 			{
 				room.players.find(player => player.id === socket.clientId).isPlaying ?
-				<button onClick={() => socket.emit('notPlaying')}>Spectate</button> :
-				<button onClick={() => socket.emit('playing')}>Join game</button>
+				<button className='play-button' onClick={() => socket.emit('notPlaying')}>Spectate</button> :
+				<button className='play-button' onClick={() => socket.emit('playing')}>Join game</button>
 			}
 			</div>
 			<div className='game-container'>
@@ -45,7 +51,11 @@ export default function Room({ room, setRoom }) {
 					You are spectating
 				</div>
 				}
-				{room.message && <div className='room-message'>{room.message}</div>}
+				<div 
+					className={'room-message' + (room.message ? ' visible' : '')}
+				>
+					{lastMessage}
+				</div>
 			</div>
 			<div className='bottom-row'>
 				{room.players.map(player => <PlayerCard key={player.id} player={player} room={room} />)}
@@ -74,6 +84,7 @@ function HostControls({ player, room }) {
 			<button 
 				onClick={togglePause}
 				disabled={room.currentBuzz}
+				className='pause-button'
 			>
 				{room.roundPaused ? 'Resume' : 'Pause'}
 			</button>
