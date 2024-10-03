@@ -26,12 +26,12 @@
 	& .room-code-cta {
 		position: absolute;
 		font: 600 10pt 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
-		transition: opacity .3s ease .3s, transform .3s ease .3s;
+		transition: opacity .3s ease 1s, transform .3s ease 1s;
 	}
 
 	& .room-code-hidden {
 		filter: blur(10px);
-		transition: filter .3s ease .3s;
+		transition: filter .3s ease 1s;
 	}
 
 	&:hover {
