@@ -6,6 +6,7 @@ export default class Player {
 		this.isPlaying = false;
 		this.room = null;
 		this.isBuzzerPressed = false;
+		this.score = 0;
 	}
 
 	addSocket(socket) {
@@ -21,7 +22,8 @@ export default class Player {
 			id: this.id,
 			name: this.name,
 			isPlaying: this.isPlaying,
-			isBuzzerPressed: this.isBuzzerPressed
+			isBuzzerPressed: this.isBuzzerPressed,
+			score: this.score
 		}
 	}
 }

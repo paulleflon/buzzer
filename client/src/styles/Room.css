@@ -76,6 +76,22 @@
 		background-color: #ffce2dca;
 		border-color: #ffce2dca;
 	}
+
+	& .player-score {
+		z-index: 3;
+		position: absolute;
+		top: -13px;
+		right: -13px;
+		font-size: 11pt;
+		width: 26px;
+		height: 26px;
+		color: white;
+		background: red;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		border-radius: 50%;
+	}
 }
 
 .game-container {
@@ -137,6 +153,7 @@
 .host-controls {
 	display: flex;
 	justify-content: center;
+	flex-wrap: wrap;
 	align-items: center;
 	gap: 10px;
 }

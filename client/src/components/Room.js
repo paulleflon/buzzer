@@ -4,11 +4,17 @@ import '../styles/Room.css';
 import Buzzer from '../assets/buzzer.png';
 import BuzzerPressed from '../assets/buzzer_pressed.png';
 import BuzzerAudio from '../assets/buzzer.mp3';
+import WrongAudio from '../assets/wrong.mp3';
+import ExpiredSound from '../assets/expired.mp3';
+import PointsSound from '../assets/points.mp3';
 
 export default function Room({ room, setRoom }) {
 	const player = room.players.find(player => player.id === socket.clientId);
 	const [lastMessage, setLastMessage] = useState('');
-	const [audio] = useState(new Audio(BuzzerAudio));
+	const [buzzAudio] = useState(new Audio(BuzzerAudio));
+	const [wrongAudio] = useState(new Audio(WrongAudio));
+	const [expiredAudio] = useState(new Audio(ExpiredSound));
+	const [pointsAudio] = useState(new Audio(PointsSound));
 	const container = useRef(null);
 
 	useEffect(() => {
@@ -20,10 +26,28 @@ export default function Room({ room, setRoom }) {
 			container.current.focus();
 		});
 		socket.on('buzz', () => {
-			audio.currentTime = 0;
-			audio.play();
+			buzzAudio.currentTime = 0;
+			buzzAudio.play();
 		});
-		return () => socket.off('updateRoom');
+		socket.on('playWrongSound', () => {
+			wrongAudio.currentTime = 0;
+			wrongAudio.play();
+		});
+		socket.on('playExpiredSound', () => {
+			expiredAudio.currentTime = 0;
+			expiredAudio.play();
+		});
+		socket.on('playPointsSound', () => {
+			pointsAudio.currentTime = 0;
+			pointsAudio.play();
+		});
+		return () => {
+			socket.off('updateRoom');
+			socket.off('buzz');
+			socket.off('playWrongSound');
+			socket.off('playExpiredSound');
+			socket.off('playPointsSound');
+		}
 	});
 
 	const buzz = () => {
@@ -91,24 +115,46 @@ function HostControls({ player, room }) {
 		else
 			socket.emit('pause');
 	}
+
+	const givePoints = (points) => {
+		const playerId = room.currentBuzz;
+		socket.emit('givePoints', playerId, points);
+	}
+
+	const wrongAnswer = () => {
+		socket.emit('continueRound', true);
+	}
+
 	if (player.id !== room.host)
 		return null;
 	return (
 		<div className='host-controls'>
-			<button 
-				onClick={togglePause}
-				disabled={room.currentBuzz}
-				className='pause-button'
-			>
-				{room.roundPaused ? 'Resume' : 'Pause'}
-			</button>
-			<button 
-				onClick={continueRound}
-				disabled={room.pressedThisRound.length === room.players.length || !room.currentBuzz}
-			>
-				Continue Round
-
-			</button>
+		{
+			room.currentBuzz &&
+			<>
+				<button onClick={() => givePoints(1)}>+1</button>
+				<button onClick={() => givePoints(2)}>+2</button>
+				<button onClick={() => givePoints(3)}>+3</button>
+				<button onClick={wrongAnswer}>Wrong answer</button>
+			</>
+		}
+		{ !room.currentBuzz  &&
+			<>
+				<button 
+					onClick={togglePause}
+					disabled={room.currentBuzz}
+					className='pause-button'
+				>
+					{room.roundPaused ? 'Resume' : 'Pause'}
+				</button>
+				<button 
+					onClick={continueRound}
+					disabled={room.pressedThisRound.length === room.players.filter(p => p.isPlaying).length || !room.currentBuzz}
+				>
+					Continue Round
+				</button>
+			</>
+		}
 			<button onClick={nextRound}>Next Round</button>
 		</div>
 	)
@@ -129,6 +175,7 @@ function PlayerCard({ player, room }) {
 
 	return (
 		<div className={'player-card ' + className}>
+			{player.isPlaying && <div className='player-score'>{player.score}</div>}
 			<div className='player-buzzer'
 				onClick={() => {
 					socket.emit('pressBuzzer', room.id);

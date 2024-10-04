@@ -105,7 +105,8 @@ io.on('connection', (socket) => {
 		io.to(player.room).emit('buzz');
 	});
 
-	socket.on('continueRound', () => {
+	socket.on('continueRound', (playSound = false) => {
+		console.log({playSound});	
 		if (!player.room || player.id !== ROOMS[player.room].host)
 			return;
 		const room = ROOMS[player.room];
@@ -113,6 +114,8 @@ io.on('connection', (socket) => {
 		room.currentBuzz = null;
 		room.message = null;
 		io.to(player.room).emit('updateRoom', room.toClient());
+		if (playSound)
+			io.to(player.room).emit('playWrongSound');
 	});
 	socket.on('nextRound', () => {
 		if (!player.room || player.id !== ROOMS[player.room].host)
@@ -123,6 +126,7 @@ io.on('connection', (socket) => {
 		room.currentBuzz = null;
 		room.message = null;
 		io.to(player.room).emit('updateRoom', room.toClient());
+		io.to(player.room).emit('playExpiredSound');
 	});
 
 	socket.on('pause', () => {
@@ -142,5 +146,16 @@ io.on('connection', (socket) => {
 		io.to(player.room).emit('updateRoom', room.toClient());
 	});
 
-
+	socket.on('givePoints', (playerId, points) => {
+		if (!player.room || player.id !== ROOMS[player.room].host)
+			return;
+		const room = ROOMS[player.room];
+		const receivingPlayer = PLAYERS[playerId];
+		receivingPlayer.score += points;
+		room.roundPaused = false;
+		room.currentBuzz = null;
+		room.message = '';
+		io.to(player.room).emit('updateRoom', room.toClient());
+		io.to(player.room).emit('playPointsSound');
+	});
 });
