@@ -148,6 +148,9 @@
 		width: 30%;
 		object-fit: contain;
 	}
+	&[data-disabled="true"] img {
+		filter: grayscale(100%);
+	}
 }
 
 .host-controls {

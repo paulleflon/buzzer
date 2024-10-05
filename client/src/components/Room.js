@@ -81,7 +81,11 @@ export default function Room({ room, setRoom }) {
 				onKeyDown={keyDown}
 			>
 				{player.isPlaying ? 
-					<div className='buzzer-container' onClick={buzz}>
+					<div 
+						className='buzzer-container' 
+						onClick={buzz}
+						data-disabled={room.pressedThisRound.includes(socket.clientId)}
+					>
 						{room.currentBuzz === socket.clientId ? <img src={BuzzerPressed} alt='buzzer' /> : <img src={Buzzer} alt='buzzer' />}
 					</div>
 				:
@@ -103,11 +107,9 @@ export default function Room({ room, setRoom }) {
 };
 
 function HostControls({ player, room }) {
-	const continueRound = () => {
-		socket.emit('continueRound');
-	}
 	const nextRound = () => {
-		socket.emit('nextRound');
+		if (window.confirm('Are you sure you want to start the next round?'))
+			socket.emit('nextRound');
 	}
 	const togglePause = () => {
 		if (room.roundPaused)
@@ -146,12 +148,6 @@ function HostControls({ player, room }) {
 					className='pause-button'
 				>
 					{room.roundPaused ? 'Resume' : 'Pause'}
-				</button>
-				<button 
-					onClick={continueRound}
-					disabled={room.pressedThisRound.length === room.players.filter(p => p.isPlaying).length || !room.currentBuzz}
-				>
-					Continue Round
 				</button>
 			</>
 		}

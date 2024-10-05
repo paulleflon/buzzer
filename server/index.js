@@ -154,6 +154,7 @@ io.on('connection', (socket) => {
 		receivingPlayer.score += points;
 		room.roundPaused = false;
 		room.currentBuzz = null;
+		room.pressedThisRound = [];
 		room.message = '';
 		io.to(player.room).emit('updateRoom', room.toClient());
 		io.to(player.room).emit('playPointsSound');
