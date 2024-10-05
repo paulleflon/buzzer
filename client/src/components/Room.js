@@ -108,7 +108,8 @@ export default function Room({ room, setRoom }) {
 
 function HostControls({ player, room }) {
 	const nextRound = () => {
-		if (window.confirm('Are you sure you want to start the next round?'))
+		if (room.pressedThisRound.length === room.players.length || 
+				window.confirm('Are you sure you want to start the next round?'))
 			socket.emit('nextRound');
 	}
 	const togglePause = () => {
