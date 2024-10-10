@@ -1,37 +1,45 @@
-import {Server} from 'socket.io';
-import Room from './Room.js';
-import Player from './Player.js';
+import { Server } from 'socket.io';
+import Player from './classes/Player.js';
+import Room from './classes/Room.js';
+import { readdir } from 'node:fs/promises';
 
 const io = new Server({
 	cors: {
-		origin: 'http://localhost:3000'
+		origin: process.env.CORS_ORIGIN || 'http://localhost:3000'
 	}
 });
 
-export const ROOMS = {};
-export const PLAYERS = {};
+const events = [];
+const files = await readdir('./events');
+
+for (const file of files) {
+	const { default: event } = await import(`./events/${file}`);
+	console.log(event);
+	events.push(event);
+}
 
 io.listen(process.env.PORT || 4000);
 
-
-io.on('connection', (socket) => {
-	const id = socket.handshake.query.clientId;
-	if (!id)
-		return socket.disconnect();
-	socket.clientId = id;
+io.on('connection', socket => {
+	for (const event of events) {
+		socket.on(event.name, event.handler.bind(null, socket, io));
+	}
+	return;
 	let player = PLAYERS[id];
 	if (player) {
 		PLAYERS[id].addSocket(socket);
 	} else {
 		console.log('New player:', id);
-			player = new Player(socket, id);
+		player = new Player(socket, id);
 		PLAYERS[id] = player;
 	}
 
 	socket.on('disconnect', () => {
-		console.log('disconnect', player.sockets.map(s => s.id));
-		if (!player.room) 
-			return;
+		console.log(
+			'disconnect',
+			player.sockets.map(s => s.id)
+		);
+		if (!player.room) return;
 		player.removeSocket(socket);
 		if (player.sockets.length === 0) {
 			const room = ROOMS[player.room];
@@ -39,12 +47,10 @@ io.on('connection', (socket) => {
 			if (room.players.length === 0) {
 				delete ROOMS[player.room];
 				console.log('Room deleted:', player.room);
-			}
-			else
-				io.to(player.room).emit('updateRoom', room.toClient());
+			} else io.to(player.room).emit('updateRoom', room.toClient());
 		}
 	});
-	
+
 	socket.on('newRoom', (name, callback) => {
 		const room = new Room(player);
 		player.name = name;
@@ -52,7 +58,7 @@ io.on('connection', (socket) => {
 		ROOMS[room.id] = room;
 		console.log('Room created:', room.id);
 		socket.join(room.id);
-		callback({room: room.toClient()});
+		callback({ room: room.toClient() });
 	});
 
 	socket.on('joinRoom', (name, roomId, callback) => {
@@ -60,43 +66,36 @@ io.on('connection', (socket) => {
 		player.name = name;
 		console.log(ROOMS);
 		if (!room) {
-			return callback({error: 'Room not found'});
+			return callback({ error: 'Room not found' });
 		}
-		if (!room.players.includes(player.id))
-			room.players.push(player.id);
+		if (!room.players.includes(player.id)) room.players.push(player.id);
 		console.log('Room joined:', room.id);
 		socket.join(room.id);
 		player.room = room.id;
 		io.to(room.id).emit('updateRoom', room.toClient());
-		callback({room: room.toClient()});
+		callback({ room: room.toClient() });
 	});
 
 	socket.on('playing', () => {
-		if (!player.room)
-			return;
+		if (!player.room) return;
 		const room = ROOMS[player.room];
 		player.isPlaying = true;
 		io.to(player.room).emit('updateRoom', room.toClient());
 	});
 
 	socket.on('notPlaying', () => {
-		if (!player.room)
-			return;
+		if (!player.room) return;
 		const room = ROOMS[player.room];
 		player.isPlaying = false;
 		io.to(player.room).emit('updateRoom', room.toClient());
 	});
 
 	socket.on('buzz', () => {
-		if (!player.room)
-			return;
+		if (!player.room) return;
 		const room = ROOMS[player.room];
-		if (room.roundPaused)
-			return;
-		if (room.pressedThisRound.includes(player.id))
-			return;
-		if (!player.isPlaying)
-			return;
+		if (room.roundPaused) return;
+		if (room.pressedThisRound.includes(player.id)) return;
+		if (!player.isPlaying) return;
 		room.roundPaused = true;
 		room.pressedThisRound.push(player.id);
 		room.currentBuzz = player.id;
@@ -106,20 +105,17 @@ io.on('connection', (socket) => {
 	});
 
 	socket.on('continueRound', (playSound = false) => {
-		console.log({playSound});	
-		if (!player.room || player.id !== ROOMS[player.room].host)
-			return;
+		console.log({ playSound });
+		if (!player.room || player.id !== ROOMS[player.room].host) return;
 		const room = ROOMS[player.room];
 		room.roundPaused = false;
 		room.currentBuzz = null;
 		room.message = null;
 		io.to(player.room).emit('updateRoom', room.toClient());
-		if (playSound)
-			io.to(player.room).emit('playWrongSound');
+		if (playSound) io.to(player.room).emit('playWrongSound');
 	});
 	socket.on('nextRound', () => {
-		if (!player.room || player.id !== ROOMS[player.room].host)
-			return;
+		if (!player.room || player.id !== ROOMS[player.room].host) return;
 		const room = ROOMS[player.room];
 		room.roundPaused = false;
 		room.pressedThisRound = [];
@@ -130,16 +126,14 @@ io.on('connection', (socket) => {
 	});
 
 	socket.on('pause', () => {
-		if (!player.room || player.id !== ROOMS[player.room].host)
-			return;
+		if (!player.room || player.id !== ROOMS[player.room].host) return;
 		const room = ROOMS[player.room];
 		room.roundPaused = true;
 		room.message = 'Round paused';
 		io.to(player.room).emit('updateRoom', room.toClient());
 	});
 	socket.on('unpause', () => {
-		if (!player.room || player.id !== ROOMS[player.room].host)
-			return;
+		if (!player.room || player.id !== ROOMS[player.room].host) return;
 		const room = ROOMS[player.room];
 		room.roundPaused = false;
 		room.message = null;
@@ -147,8 +141,7 @@ io.on('connection', (socket) => {
 	});
 
 	socket.on('givePoints', (playerId, points) => {
-		if (!player.room || player.id !== ROOMS[player.room].host)
-			return;
+		if (!player.room || player.id !== ROOMS[player.room].host) return;
 		const room = ROOMS[player.room];
 		const receivingPlayer = PLAYERS[playerId];
 		receivingPlayer.score += points;

@@ -1,4 +1,4 @@
-import {useEffect, useRef, useState} from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { socket } from '../lib/socket';
 import '../styles/Room.css';
 import Buzzer from '../assets/buzzer.png';
@@ -9,8 +9,8 @@ import ExpiredSound from '../assets/expired.mp3';
 import PointsSound from '../assets/points.mp3';
 
 export default function Room({ room, setRoom }) {
-	const player = room.players.find(player => player.id === socket.clientId);
-	const [lastMessage, setLastMessage] = useState('');
+	const player = room.players.find(player => player.socketId === socket.id);
+	const [lastMessage, setLastMessage] = useState(room.message || '');
 	const [buzzAudio] = useState(new Audio(BuzzerAudio));
 	const [wrongAudio] = useState(new Audio(WrongAudio));
 	const [expiredAudio] = useState(new Audio(ExpiredSound));
@@ -18,7 +18,7 @@ export default function Room({ room, setRoom }) {
 	const container = useRef(null);
 
 	useEffect(() => {
-		socket.on('updateRoom', (updatedRoom) => {
+		socket.on('updateRoom', updatedRoom => {
 			setRoom(updatedRoom);
 			if (updatedRoom.message && updatedRoom.message !== lastMessage) {
 				setLastMessage(updatedRoom.message);
@@ -47,140 +47,166 @@ export default function Room({ room, setRoom }) {
 			socket.off('playWrongSound');
 			socket.off('playExpiredSound');
 			socket.off('playPointsSound');
-		}
+		};
 	});
 
 	const buzz = () => {
-		if (player.isPlaying && !room.currentBuzz)
-			socket.emit('buzz');
-	}
+		if (player.isPlaying && !room.currentBuzz) socket.emit('buzz');
+	};
 
-	const keyDown = (e) => {
-		if (e.key === ' ')
-			buzz();
+	const keyDown = e => {
+		if (e.key === ' ') buzz();
 	};
 
 	return (
 		<>
-		<div className='top-bar'>
-			<div className='room-code'>
-				<div className='room-code-cta'>Hover to reveal code</div>
-				<div className='room-code-hidden'>{room.id}</div>
+			<div className="top-bar">
+				<div className="room-code">
+					<div className="room-code-cta">Hover to reveal code</div>
+					<div className="room-code-hidden">{room.id}</div>
+				</div>
+				<HostControls player={player} room={room} />
+				{player.isPlaying ? (
+					<button
+						className="play-button"
+						onClick={() => socket.emit('notPlaying')}
+					>
+						Spectate
+					</button>
+				) : (
+					<button
+						className="play-button"
+						onClick={() => socket.emit('playing')}
+					>
+						Join game
+					</button>
+				)}
 			</div>
-			<HostControls player={room.players.find(player => socket.clientId === player.id)} room={room} />
-			{
-				room.players.find(player => player.id === socket.clientId).isPlaying ?
-				<button className='play-button' onClick={() => socket.emit('notPlaying')}>Spectate</button> :
-				<button className='play-button' onClick={() => socket.emit('playing')}>Join game</button>
-			}
-			</div>
-			<div 
-				className='game-container' 
+			<div
+				className="game-container"
 				ref={container}
 				tabIndex={0}
 				onKeyDown={keyDown}
 			>
-				{player.isPlaying ? 
-					<div 
-						className='buzzer-container' 
+				{player.isPlaying ? (
+					<div
+						className="buzzer-container"
 						onClick={buzz}
-						data-disabled={room.pressedThisRound.includes(socket.clientId)}
+						data-disabled={room.pressedThisRound.includes(
+							socket.clientId
+						)}
 					>
-						{room.currentBuzz === socket.clientId ? <img src={BuzzerPressed} alt='buzzer' /> : <img src={Buzzer} alt='buzzer' />}
+						{room.currentBuzz === socket.clientId ? (
+							<img src={BuzzerPressed} alt="buzzer" />
+						) : (
+							<img src={Buzzer} alt="buzzer" />
+						)}
 					</div>
-				:
-				<div className='spectating'>
-					You are spectating
-				</div>
-				}
-				<div 
-					className={'room-message' + (room.message ? ' visible' : '')}
+				) : (
+					<div className="spectating">You are spectating</div>
+				)}
+				<div
+					className={
+						'room-message' + (room.message ? ' visible' : '')
+					}
 				>
 					{lastMessage}
 				</div>
 			</div>
-			<div className='bottom-row'>
-				{room.players.map(player => <PlayerCard key={player.id} player={player} room={room} />)}
+			<div className="bottom-row">
+				{room.players.map(player => (
+					<PlayerCard key={player.id} player={player} room={room} />
+				))}
 			</div>
 		</>
-	)
-};
+	);
+}
 
 function HostControls({ player, room }) {
 	const nextRound = () => {
-		if (room.pressedThisRound.length === room.players.length || 
-				window.confirm('Are you sure you want to start the next round?'))
+		if (
+			room.pressedThisRound.length === room.players.length ||
+			window.confirm('Are you sure you want to start the next round?')
+		)
 			socket.emit('nextRound');
-	}
+	};
 	const togglePause = () => {
+		console.log('toggpl');
 		if (room.roundPaused)
-			socket.emit('unpause');
+			socket.emit('updateRoom', room.id, {
+				roundPaused: false,
+				message: ''
+			});
 		else
-			socket.emit('pause');
-	}
+			socket.emit('updateRoom', room.id, {
+				roundPaused: true,
+				message: 'Round Paused'
+			});
+	};
 
-	const givePoints = (points) => {
+	const givePoints = points => {
 		const playerId = room.currentBuzz;
 		socket.emit('givePoints', playerId, points);
-	}
+	};
 
 	const wrongAnswer = () => {
 		socket.emit('continueRound', true);
-	}
+	};
 
-	if (player.id !== room.host)
-		return null;
+	if (player.id !== room.host) return null;
 	return (
-		<div className='host-controls'>
-		{
-			room.currentBuzz &&
-			<>
-				<button onClick={() => givePoints(1)}>+1</button>
-				<button onClick={() => givePoints(2)}>+2</button>
-				<button onClick={() => givePoints(3)}>+3</button>
-				<button onClick={wrongAnswer}>Wrong answer</button>
-			</>
-		}
-		{ !room.currentBuzz  &&
-			<>
-				<button 
-					onClick={togglePause}
-					disabled={room.currentBuzz}
-					className='pause-button'
-				>
-					{room.roundPaused ? 'Resume' : 'Pause'}
-				</button>
-			</>
-		}
+		<div className="host-controls">
+			{room.currentBuzz && (
+				<>
+					<button onClick={() => givePoints(1)}>+1</button>
+					<button onClick={() => givePoints(2)}>+2</button>
+					<button onClick={() => givePoints(3)}>+3</button>
+					<button onClick={wrongAnswer}>Wrong answer</button>
+				</>
+			)}
+			{!room.currentBuzz && (
+				<>
+					<button
+						onClick={togglePause}
+						disabled={room.currentBuzz}
+						className="pause-button"
+					>
+						{room.roundPaused ? 'Resume' : 'Pause'}
+					</button>
+				</>
+			)}
 			<button onClick={nextRound}>Next Round</button>
 		</div>
-	)
+	);
 }
 
 function PlayerCard({ player, room }) {
 	let className = '';
-	if (!player.isPlaying)
-		className = 'spectator';
-	else if (room.currentBuzz === player.id)
-		className = 'current-buzz';
-	else if (room.roundPaused)
-		className = 'round-paused';
+	if (!player.isPlaying) className = 'spectator';
+	else if (room.currentBuzz === player.id) className = 'current-buzz';
+	else if (room.roundPaused) className = 'round-paused';
 	else if (room.pressedThisRound.includes(player.id))
 		className = 'pressed-this-round';
-	if (room.host === player.id)
-		className += ' host';
+	if (room.host === player.id) className += ' host';
 
 	return (
 		<div className={'player-card ' + className}>
-			{player.isPlaying && <div className='player-score'>{player.score}</div>}
-			<div className='player-buzzer'
+			{player.isPlaying && (
+				<div className="player-score">{player.score}</div>
+			)}
+			<div
+				className="player-buzzer"
 				onClick={() => {
 					socket.emit('pressBuzzer', room.id);
-				}
-			}>
-				{room.currentBuzz === player.id ? <img src={BuzzerPressed} alt='buzzer' /> : <img src={Buzzer} alt='buzzer' />}
+				}}
+			>
+				{room.currentBuzz === player.id ? (
+					<img src={BuzzerPressed} alt="buzzer" />
+				) : (
+					<img src={Buzzer} alt="buzzer" />
+				)}
 			</div>
 			{player.name}
 		</div>
-	)
+	);
 }
