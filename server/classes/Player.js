@@ -14,7 +14,13 @@ export default class Player {
 		this.isBuzzerPressed = false;
 		this.score = 0;
 	}
-
+	update(updates) {
+		if (updates) {
+			Object.keys(updates).forEach(key => {
+				this[key] = updates[key];
+			});
+		}
+	}
 	connect(socket) {
 		this.socket = socket;
 		if (this.roomId) socket.join(this.roomId);

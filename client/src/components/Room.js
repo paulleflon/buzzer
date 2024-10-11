@@ -51,7 +51,8 @@ export default function Room({ room, setRoom }) {
 	});
 
 	const buzz = () => {
-		if (player.isPlaying && !room.currentBuzz) socket.emit('buzz');
+		if (player.isPlaying && !room.currentBuzz)
+			socket.emit('pressBuzzer', room.id);
 	};
 
 	const keyDown = e => {
@@ -69,14 +70,22 @@ export default function Room({ room, setRoom }) {
 				{player.isPlaying ? (
 					<button
 						className="play-button"
-						onClick={() => socket.emit('notPlaying')}
+						onClick={() =>
+							socket.emit('updateMe', room.id, {
+								isPlaying: false
+							})
+						}
 					>
 						Spectate
 					</button>
 				) : (
 					<button
 						className="play-button"
-						onClick={() => socket.emit('playing')}
+						onClick={() =>
+							socket.emit('updateMe', room.id, {
+								isPlaying: true
+							})
+						}
 					>
 						Join game
 					</button>
@@ -128,10 +137,14 @@ function HostControls({ player, room }) {
 			room.pressedThisRound.length === room.players.length ||
 			window.confirm('Are you sure you want to start the next round?')
 		)
-			socket.emit('nextRound');
+			socket.emit('updateRoom', room.id, {
+				currentBuzz: null,
+				roundPaused: false,
+				pressedThisRound: [],
+				message: ''
+			});
 	};
 	const togglePause = () => {
-		console.log('toggpl');
 		if (room.roundPaused)
 			socket.emit('updateRoom', room.id, {
 				roundPaused: false,
@@ -146,11 +159,25 @@ function HostControls({ player, room }) {
 
 	const givePoints = points => {
 		const playerId = room.currentBuzz;
-		socket.emit('givePoints', playerId, points);
+		const player = room.players.find(player => player.id === playerId);
+		if (!player) return;
+		socket.emit('updatePlayer', room.id, playerId, {
+			score: player.score + points
+		});
+		socket.emit('updateRoom', room.id, {
+			currentBuzz: null,
+			roundPaused: false,
+			message: ''
+		});
 	};
 
 	const wrongAnswer = () => {
-		socket.emit('continueRound', true);
+		socket.emit('updateRoom', room.id, {
+			currentBuzz: null,
+			roundPaused: true,
+			pressedThisRound: [],
+			message: ''
+		});
 	};
 
 	if (player.id !== room.host) return null;
