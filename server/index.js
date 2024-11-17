@@ -21,6 +21,9 @@ for (const file of files) {
 io.listen(process.env.PORT || 4000);
 
 io.on('connection', socket => {
+	socket.onAny((...args) => {
+		console.log(socket.id, args[0]);
+	})
 	for (const event of events) {
 		socket.on(event.name, event.handler.bind(null, socket, io));
 	}

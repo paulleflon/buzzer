@@ -8,17 +8,20 @@ import WrongAudio from '../assets/wrong.mp3';
 import ExpiredSound from '../assets/expired.mp3';
 import PointsSound from '../assets/points.mp3';
 
-export default function Room({ room, setRoom }) {
-	const player = room.players.find(player => player.socketId === socket.id);
+export default function Room({ room, setRoom, playerId }) {
+	const player = room.players.find(player => player.id === playerId);
 	const [lastMessage, setLastMessage] = useState(room.message || '');
 	const [buzzAudio] = useState(new Audio(BuzzerAudio));
 	const [wrongAudio] = useState(new Audio(WrongAudio));
 	const [expiredAudio] = useState(new Audio(ExpiredSound));
 	const [pointsAudio] = useState(new Audio(PointsSound));
+	const [otherSocket, setOtherSocket] = useState(false);
 	const container = useRef(null);
 
 	useEffect(() => {
+		console.log('bind');
 		socket.on('updateRoom', updatedRoom => {
+			console.log('wsh');
 			setRoom(updatedRoom);
 			if (updatedRoom.message && updatedRoom.message !== lastMessage) {
 				setLastMessage(updatedRoom.message);
@@ -41,16 +44,22 @@ export default function Room({ room, setRoom }) {
 			pointsAudio.currentTime = 0;
 			pointsAudio.play();
 		});
+		socket.on('connectedToOtherSocket', () => {
+			setOtherSocket(true);
+		}, []);
 		return () => {
+			console.log('offed');
 			socket.off('updateRoom');
 			socket.off('buzz');
 			socket.off('playWrongSound');
 			socket.off('playExpiredSound');
 			socket.off('playPointsSound');
+			socket.off('connectedToOtherSocket');
 		};
 	});
 
 	const buzz = () => {
+		console.log(socket);
 		if (player.isPlaying && !room.currentBuzz)
 			socket.emit('pressBuzzer', room.id);
 	};
@@ -61,6 +70,10 @@ export default function Room({ room, setRoom }) {
 
 	return (
 		<>
+			<div className={`other-socket ${otherSocket ? 'visible' : ''}`}>
+				<h1>You are connected with another client.</h1>
+				<p>You can now close this tab and play from your new client.</p>
+			</div>
 			<div className="top-bar">
 				<div className="room-code">
 					<div className="room-code-cta">Hover to reveal code</div>

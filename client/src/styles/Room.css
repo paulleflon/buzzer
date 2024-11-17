@@ -4,6 +4,31 @@
 	height: 100%;
 }
 
+.other-socket {
+	position: fixed;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	right: 0;
+	background: #0008;
+	color: white;
+	z-index: 999;
+	backdrop-filter: blur(0px);
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	transition: backdrop-filter .3s ease, opacity .3s ease, pointer-events 0s;
+	opacity: 0;
+	pointer-events: none;
+	&.visible {
+		backdrop-filter: blur(10px);
+		opacity: 1;
+		pointer-events: all;
+	}
+}
+
+
 .top-bar {
 	height: 120px;
 	display: flex;

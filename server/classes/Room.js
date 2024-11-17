@@ -31,7 +31,6 @@ class Room {
 				this[key] = updates[key];
 			});
 		}
-		console.log(this);
 		this.io.to(this.id).emit('updateRoom', this.toClient());
 	}
 

@@ -17,6 +17,6 @@ export default {
 			room.addPlayer(player);
 			socket.join(room.id);
 		}
-		callback({ room: room.toClient() });
+		callback({ room: room.toClient(), pId: player.id });
 	}
 };

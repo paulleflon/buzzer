@@ -1,8 +1,10 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { socket } from './lib/socket';
-import './styles/App.css';
+/* eslint-disable react-hooks/rules-of-hooks */
+import React, { useCallback, useEffect, useState } from 'react';
 import HomePage from './components/HomePage';
 import Room from './components/Room';
+import { socket } from './lib/socket';
+import useTempId from './lib/useTempId';
+import './styles/App.css';
 
 const validateHash = hash => {
 	const upperHash = hash.slice(1).toUpperCase();
@@ -26,6 +28,7 @@ export default function App() {
 	const [joinError, setJoinError] = useState('');
 	const [createError] = useState('');
 	const [usernameError, setUsernameError] = useState(false);
+	const [playerId, setPlayerId] = useState();
 
 	const createRoom = () => {
 		if (!username) {
@@ -33,6 +36,7 @@ export default function App() {
 			return;
 		} else setUsernameError(false);
 		socket.emit('createRoom', username, (playerId, room) => {
+			setPlayerId(useTempId(room.id, playerId));
 			localStorage.setItem(`id_room_${room.id}`, playerId);
 			window.location.hash = room.id;
 			setRoom(room);
@@ -50,19 +54,21 @@ export default function App() {
 				setJoinError('Please enter a room code');
 				return;
 			} else setJoinError('');
-			const tempId = localStorage.getItem(`id_room_${code}`);
+
+			const tempId = useTempId(code);
 			socket.emit(
 				'joinRoom',
 				username,
 				code,
 				tempId,
-				({ room, error }) => {
+				({ room, error, pId }) => {
 					if (error) {
 						setJoinError(error);
 						window.location.hash = '';
 					} else {
 						window.location.hash = code;
 						setRoom(room);
+						setPlayerId(useTempId(code, pId));
 					}
 				}
 			);
@@ -103,7 +109,7 @@ export default function App() {
 	} else {
 		return (
 			<div className="App">
-				<Room room={room} setRoom={setRoom} />
+				<Room room={room} setRoom={setRoom} playerId={playerId} />
 			</div>
 		);
 	}

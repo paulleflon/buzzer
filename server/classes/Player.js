@@ -22,8 +22,12 @@ export default class Player {
 		}
 	}
 	connect(socket) {
+		if (this.socket.id === socket.id) return;
+		if (this.socket) {
+			this.socket.emit('connectedToOtherSocket');
+			this.socket.leave(this.roomId);
+		}
 		this.socket = socket;
-		if (this.roomId) socket.join(this.roomId);
 	}
 
 	addSocket(socket) {
